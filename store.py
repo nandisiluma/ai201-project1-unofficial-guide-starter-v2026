@@ -63,7 +63,12 @@ class _OnnxEmbedder:
     def __init__(self):
         from chromadb.utils.embedding_functions import ONNXMiniLM_L6_V2
 
-        self._ef = ONNXMiniLM_L6_V2()
+        # Force the CPU execution provider. Left to pick automatically, onnxruntime
+        # prefers CoreML on macOS, and CoreML does not run this model correctly on
+        # every Mac — it fails with an opaque "Non-zero status code" error instead
+        # of falling back. CPU is slower per call but this model is small enough
+        # that it doesn't matter, and it works everywhere.
+        self._ef = ONNXMiniLM_L6_V2(preferred_providers=["CPUExecutionProvider"])
 
     def encode(self, texts, show_progress_bar: bool = False):
         return [vector.tolist() for vector in self._ef(list(texts))]
@@ -198,6 +203,12 @@ def search(
         raise RuntimeError(
             f"No index called '{name}'. Run `python app.py index` first."
         ) from exc
+
+    if collection.count() == 0:
+        raise RuntimeError(
+            f"Index '{name}' exists but is empty. `python app.py index` must have "
+            f"failed partway through. Run it again."
+        )
 
     raw = collection.query(
         query_embeddings=embed([question]),
