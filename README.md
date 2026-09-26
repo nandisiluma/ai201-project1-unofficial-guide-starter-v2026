@@ -141,11 +141,22 @@ year-round.
      visible. Milestone 4. -->
 
 **Question:**
+"How often does the tram in Marchwood run on weekdays?"
 
 **Answer:**
 
 ```
+#   distance   source                           preview
+----------------------------------------------------------------------------------------------------
+1   0.3170     guide_marchwood.md               ## Getting around  A tram network of four lines, run...
+2   0.3632     guide_marchwood.md               ## Eat and drink  The best eating is in the Northgat...
+3   0.3676     guide_accessibility.md           **Marchwood** has a modern tram network with level b...
+4   0.4517     guide_eating.md                  Marchwood is the exception, in that the good distric...
+5   0.4862     guide_kestrelford.md             ## When to go  Late spring and early autumn. The Sat...
 
+Gate: best distance 0.317 is under the 0.6 cutoff
+
+Lower is better. 0.3 is a close match, 0.9 is unrelated.
 ```
 
 **My relevance cutoff:**
@@ -159,9 +170,21 @@ year-round.
 
      Milestone 4. -->
 
+Gap is between 0.252 and 0.936 so my cutoff will be 0.65
+
 | Question | In corpus? | Best distance |
 | -------- | ---------- | ------------- |
-|          |            |               |
+| 1        | Y          | 0.317         |
+
+     2             Y              0.252
+     3             Y              0.608
+     4             Y              0.285
+     5             Y              0.464
+     6              N              0.798
+     7              N              0.908
+     8              N              0.936
+     9              N              0.850
+     10             N              0.836
 
 ## How I Used AI
 
