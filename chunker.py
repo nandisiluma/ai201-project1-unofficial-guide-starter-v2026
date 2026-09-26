@@ -22,10 +22,16 @@ to it, write down what you saw, and move on. That's a real observation about
 your pipeline, not giving up.
 """
 
+import re
 from dataclasses import dataclass
 
 import config
 from ingest import Document
+
+# A sentence boundary: end punctuation followed by whitespace and the start
+# of the next sentence. Only used as a fallback for a paragraph too long to
+# fit in one chunk on its own — see split_documents.
+_SENTENCE_BOUNDARY = re.compile(r'(?<=[.!?])\s+(?=[A-Z0-9"\'#])')
 
 
 @dataclass
@@ -97,7 +103,72 @@ def split_documents(documents: list[Document]) -> list[Chunk]:
       - Would splitting on paragraph breaks keep more thoughts intact than
         splitting on a character count?
     """
-    return fallback_split(documents)
+    chunk_size = config.CHUNK_SIZE
+    overlap = config.CHUNK_OVERLAP
+
+    chunks: list[Chunk] = []
+    for doc in documents:
+        units: list[str] = []
+        for paragraph in _split_paragraphs(doc.text):
+            if len(paragraph) <= chunk_size:
+                units.append(paragraph)
+            else:
+                # A single paragraph too long to be its own chunk. Split it
+                # on sentence boundaries instead of falling back to a raw
+                # character cut.
+                units.extend(_split_sentences(paragraph))
+
+        for index, piece in enumerate(_pack(units, chunk_size, overlap)):
+            chunks.append(
+                Chunk(
+                    text=piece,
+                    source=doc.source,
+                    index=index,
+                    produced_by="chunker.py::split_documents",
+                )
+            )
+
+    return chunks
+
+
+def _split_paragraphs(text: str) -> list[str]:
+    """Break a document on blank lines — the section/paragraph breaks that
+    already exist in these markdown guides, and that never fall mid-sentence."""
+    return [p.strip() for p in text.split("\n\n") if p.strip()]
+
+
+def _split_sentences(paragraph: str) -> list[str]:
+    """Break one paragraph into sentences. Only called on a paragraph that
+    doesn't fit in a chunk by itself."""
+    return [s.strip() for s in _SENTENCE_BOUNDARY.split(paragraph) if s.strip()]
+
+
+def _pack(units: list[str], chunk_size: int, overlap: int) -> list[str]:
+    """
+    Greedily pack whole units (paragraphs, or sentences from an oversized
+    paragraph) into chunks up to chunk_size.
+
+    When a chunk fills up, the last unit that was in it carries over into the
+    front of the next chunk — that's the overlap, and because it's a whole
+    unit rather than a character slice, it can't start mid-word either.
+    """
+    pieces: list[str] = []
+    current: list[str] = []
+
+    def length(units: list[str]) -> int:
+        return sum(len(u) for u in units) + 2 * max(len(units) - 1, 0)
+
+    for unit in units:
+        if current and length(current + [unit]) > chunk_size:
+            pieces.append("\n\n".join(current))
+            carry = current[-1]
+            current = [carry] if len(carry) <= overlap else []
+        current.append(unit)
+
+    if current:
+        pieces.append("\n\n".join(current))
+
+    return pieces
 
 
 def describe(chunks: list[Chunk]) -> str:

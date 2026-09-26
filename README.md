@@ -53,29 +53,86 @@
 
      Milestone 3. -->
 
-**Chunk 1** — source: `` — produced by: ``
+======================================================================
+Chunk 1 | source: guide_accessibility.md#0 | produced by: chunker.py::split_documents
 
 ```
+======================================================================
+# Getting around the region with limited mobility
+
+An honest assessment rather than a promotional one. Some of these places are
+difficult and it is better to know in advance.
+
+## Straightforward
+
+**Thornby Wells** is the easiest town in the region. It is flat, compact, and
+everything is within three minutes of everything else. Parking is free for two
+hours anywhere in town and the station is central. The pump room and gardens
+are level throughout.
 ```
 
-**Chunk 2** — source: `` — produced by: ``
+======================================================================
+Chunk 2 | source: guide_corry_vale.md#4 | produced by: chunker.py::split_documents
+======================================================================
 
 ```
-```
+## What to see
 
-**Chunk 3** — source: `` — produced by: ``
+The valley itself is the attraction. The footpath network is dense and well marked, and a circuit taking in three of the four villages is about nine miles with 500 metres of ascent. The chapel in the second village is 12th century and always unlocked.
 
-```
-```
+## Where to stay
 
-**Chunk 4** — source: `` — produced by: ``
-
-```
-```
-
-**Chunk 5** — source: `` — produced by: ``
+Perhaps thirty beds in the entire valley, spread across two pubs and a handful of farmhouse rooms. In summer these are booked monthsahead. Camping is permitted on two marked fields and nowhere else.
 
 ```
+
+======================================================================
+Chunk 3 | source: guide_givens_mill.md#2 | produced by: chunker.py::split_documents
+======================================================================
+
+```
+## What to see
+
+The mill runs tours on the hour from 11 to 3 and the machinery is operating during them, which is loud and much more impressive thana static exhibit. The church has a Saxon doorway. The river walk downstream reaches Brightwater in about three hours.
+
+## Where to stay
+
+Nothing in the village itself. The nearest rooms are in Brightwater, which is close enough that this is not really a problem — most people come for a half day.
+
+## When to go
+
+```
+
+======================================================================
+Chunk 4 | source: guide_marchwood.md#0 | produced by: chunker.py::split_documents
+======================================================================
+
+```
+# Marchwood
+
+Marchwood is the regional hub — 180,000 people, the junction everyone changes trains at, and a city most visitors pass through rather than stop in. That is a mistake, though an understandable one, since almost nothing of interest is near the station.
+
+## Getting there
+```
+
+======================================================================
+Chunk 5 | source: guide_regional_transport.md#2 | produced by: chunker.py::split_documents
+======================================================================
+
+```
+## Buses
+
+Three operators run in the region and they do not accept each other's tickets,
+which is the single most common source of confusion for visitors. Services
+concentrate on weekday daytimes. Sunday service is minimal to non-existent
+outside the Brightwater town routes.
+
+The Kestrelford service is hourly on weekdays, two-hourly on Saturdays, and
+does not run on Sundays. The Halden Bay coast service runs four times daily
+year-round.
+
+## Driving
+
 ```
 
 ## Sample Answer
@@ -88,6 +145,7 @@
 **Answer:**
 
 ```
+
 ```
 
 **My relevance cutoff:**
@@ -102,8 +160,8 @@
      Milestone 4. -->
 
 | Question | In corpus? | Best distance |
-|---|---|---|
-|  |  |  |
+| -------- | ---------- | ------------- |
+|          |            |               |
 
 ## How I Used AI
 
@@ -145,13 +203,13 @@
 
      Milestone 1. -->
 
-| Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
-|---|---|---|---|---|---|
-| 1. Retrieved chunk contains the answer | 4 of 5 |  |  |  |  |
-| 2. Every answer names a source | 5 of 5 |  |  |  |  |
-| 3. Gate stops out-of-corpus questions | 4 of 5 |  |  |  |  |
-| 4. | | | | | |
-| 5. | | | | | |
+| Criterion                              | Target | Run 1 | Run 2 | Run 3 | Verdict |
+| -------------------------------------- | ------ | ----- | ----- | ----- | ------- |
+| 1. Retrieved chunk contains the answer | 4 of 5 |       |       |       |         |
+| 2. Every answer names a source         | 5 of 5 |       |       |       |         |
+| 3. Gate stops out-of-corpus questions  | 4 of 5 |       |       |       |         |
+| 4.                                     |        |       |       |       |         |
+| 5.                                     |        |       |       |       |         |
 
 <!-- Underneath, paste the REAL output for each criterion from one of your
      runs — the actual text your system produced, not a description of it.
@@ -168,13 +226,13 @@
 
      Milestone 2. -->
 
-| # | Criterion | Verdict | How I decided |
-|---|---|---|---|
-| 1 |  |  |  |
-| 2 |  |  |  |
-| 3 |  |  |  |
-| 4 |  |  |  |
-| 5 |  |  |  |
+| #   | Criterion | Verdict | How I decided |
+| --- | --------- | ------- | ------------- |
+| 1   |           |         |               |
+| 2   |           |         |               |
+| 3   |           |         |               |
+| 4   |           |         |               |
+| 5   |           |         |               |
 
 ## Diagnoses
 
@@ -210,13 +268,13 @@
 <!-- Same format, same five criteria, three runs each.
      `python run_eval.py --label after` -->
 
-| Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
-|---|---|---|---|---|---|
-| 1. Retrieved chunk contains the answer | 4 of 5 |  |  |  |  |
-| 2. Every answer names a source | 5 of 5 |  |  |  |  |
-| 3. Gate stops out-of-corpus questions | 4 of 5 |  |  |  |  |
-| 4. | | | | | |
-| 5. | | | | | |
+| Criterion                              | Target | Run 1 | Run 2 | Run 3 | Verdict |
+| -------------------------------------- | ------ | ----- | ----- | ----- | ------- |
+| 1. Retrieved chunk contains the answer | 4 of 5 |       |       |       |         |
+| 2. Every answer names a source         | 5 of 5 |       |       |       |         |
+| 3. Gate stops out-of-corpus questions  | 4 of 5 |       |       |       |         |
+| 4.                                     |        |       |       |       |         |
+| 5.                                     |        |       |       |       |         |
 
 **Did it help?**
 
