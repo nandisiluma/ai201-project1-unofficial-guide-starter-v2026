@@ -27,10 +27,14 @@
 
      Milestone 5. -->
 
+```
+This is a RAG question-answering system built on the city_guides corpus: fourteen markdown guides covering thirteen towns and villages in one region, plus cross-cutting guides on accessibility, eating, walking, seasons, and regional transport. It answers practical travel questions a visitor would actually ask — how often the Marchwood tram runs, how late restaurants stay open outside Marchwood, which town is fastest to walk end to end, what to watch out for on the regional bus network — by retrieving the guide passages most relevant to the question and citing the document(s) they came from. Questions the corpus doesn't cover (unrelated topics like world history or car maintenance) get refused by a relevance gate rather than answered with a guess.
+```
+
 ## Chunking Strategy
 
-**Chunk size:**
-**Overlap:**
+**Chunk size:** 500 characters
+**Overlap:** 120 characters
 
 <!-- What about YOUR documents made you pick these numbers? Short posts and
      long sectioned guides don't want the same chunking, and "800 seemed
@@ -41,6 +45,12 @@
      more than pretending you got it right first time.
 
      Milestone 3. -->
+
+```
+I started with the starter's defaults (800/120, plain character-window `fallback_split`) and sampled chunks with `python app.py chunks`. That surfaced two problems specific to these guides: chunks cut off mid-word ("...15-", "...9p", "...rather than ho", "...from the re"), and one chunk that was just a tiny orphaned tail starting mid-word. The guides are organized as short `##` sections — each one is a heading plus one paragraph, typically 200–380 characters. So I rewrote `split_documents` to pack whole paragraphs (falling back to whole sentences only if a single paragraph doesn't fit) up to `CHUNK_SIZE`, instead of slicing on a raw character count — that's why chunks now never end mid-word. I dropped `CHUNK_SIZE` from 800 to 500 once I moved to that strategy, since 500 is enough room to fit one section's heading + body plus a peek at the next heading (which becomes the overlap into the next chunk), whereas 800 was leaving so much slack that three or four unrelated sections were getting packed into a single chunk. `CHUNK_OVERLAP` stayed at 120 because every heading in this corpus is well under that, so the carried-over heading always fits.
+
+
+```
 
 ## Sample Chunks
 
@@ -198,8 +208,11 @@ Gap is between 0.252 and 0.936 so my cutoff will be 0.65
      Milestone 5. -->
 
 **1.**
+I asked AI to review the questions I came up with for testability. It helped me rewrite 2 out of 5 questions without changing the intention behind them.
 
 **2.**
+
+I pitched my plan for the chunking function to the AI. I wanted to use sentence level splitting to avoid mid sentence cutoffs, and AI pointed out the gaps in that although this solves the mid-sentence cutoff problem, it will not resolve paragraph blending which is another problem I needed to address. As a result the new logic for the chunking function runs mainly on the paragraph level split, and also uses the sentence level split as a fallback option.
 
 <!-- ── Stretch features ─────────────────────────────────────────────────────
      Doing one? Say so here BEFORE you start. A feature this README never
