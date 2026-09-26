@@ -20,7 +20,7 @@ pipeline earns credit; _"80% seemed reasonable"_ does not.
 ## 1. Retrieved chunks contain the answer
 
 For at least 4 of my 5 test questions, the retrieved chunks include one that
-contains the answer.
+contains the answer
 
 **Why this target:**
 
