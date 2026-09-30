@@ -239,17 +239,79 @@ I pitched my plan for the chunking function to the AI. I wanted to use sentence 
 
      Milestone 1. -->
 
-| Criterion                              | Target | Run 1 | Run 2 | Run 3 | Verdict |
-| -------------------------------------- | ------ | ----- | ----- | ----- | ------- |
-| 1. Retrieved chunk contains the answer | 4 of 5 |       |       |       |         |
-| 2. Every answer names a source         | 5 of 5 |       |       |       |         |
-| 3. Gate stops out-of-corpus questions  | 4 of 5 |       |       |       |         |
-| 4.                                     |        |       |       |       |         |
-| 5.                                     |        |       |       |       |         |
+| Criterion                               | Target | Run 1 | Run 2 | Run 3 | Verdict |
+| --------------------------------------- | ------ | ----- | ----- | ----- | ------- |
+| 1. Retrieved chunk contains the answer  | 4 of 5 | 3/5   | 4/5   | 3/5   | MISSED  |
+| 2. Every answer names a source          | 5 of 5 | 5/5   | 5/5   | 5/5   | MET     |
+| 3. Gate stops out-of-corpus questions   | 4 of 5 | 5/5   | 5/5   | 5/5   | MET     |
+| 4. Chunks end at a sentence boundary    | 5 of 5 | 5/5   | 5/5   | 5/5   | MET     |
+| 5. For multiple towns, retrieved chunks | 4 of 5 | 0/5   | 0/5   | 0/5   | MISSED  |
+
+include at least one chunk from every
+named town's own guide document
 
 <!-- Underneath, paste the REAL output for each criterion from one of your
      runs — the actual text your system produced, not a description of it.
      Name the file and function that produced it. -->
+
+Criterion 1
+
+### How often does the tram in Marchwood run on weekdays? — run 1
+
+- Best distance: 0.3170 (passed the gate)
+- Sources retrieved: guide_accessibility.md, guide_eating.md, guide_kestrelford.md, guide_marchwood.md
+
+```
+The tram in Marchwood runs every 8 minutes on weekdays (from guide_marchwood.md and guide_accessibility.md).
+```
+
+Criterion 2
+
+### Between Thornby Wells, Marchwood and Brightwater, which city is fastest to walk end to end? — run 1
+
+- Best distance: 0.2525 (passed the gate)
+- Sources retrieved: guide_regional_transport.md, guide_thornby_wells.md, guide_walking.md
+
+```
+Based on the provided documents, Thornby Wells is described as having flat, formal gardens and level streets, making it the region's most accessible town on foot (*guide_walking.md*). However, the documents do not contain information to determine which city is the *fastest* to walk end to end among Thornby Wells, Marchwood, and Brightwater. Therefore, I do not have enough information to answer the question.
+```
+
+Criterion 3
+
+### What should visitors be careful about when taking the bus within the region for the first time? — run 3
+
+- Best distance: 0.6084 (passed the gate)
+- Sources retrieved: guide_accessibility.md, guide_elder_ness.md, guide_halden_bay.md, guide_kestrelford.md
+
+```
+I do not have enough information to answer this question.
+```
+
+Criterion 4
+
+### Outside Marchwood, how late do restaurants stay open? — run 1
+
+- Best distance: 0.2849 (passed the gate)
+- Sources retrieved: guide_eating.md, guide_kestrelford.md, guide_marchwood.md, guide_thornby_wells.md
+
+```
+Outside Marchwood, kitchens across the region stop serving at 9pm and often earlier (guide_eating.md).
+```
+
+Criterion 5
+
+### What's the best month to visit the region? — run 2
+
+- Best distance: 0.4644 (passed the gate)
+- Sources retrieved: guide_brightwater.md, guide_halden_bay.md, guide_marchwood.md, guide_pellew_sands.md, guide_thornby_wells.md
+
+```
+Based on the provided documents, there is no single best month for the entire region, as different places have different recommendations:
+
+* **May and June** are best for Thornby Wells and Brightwater (guide_thornby_wells.md, guide_brightwater.md).
+* **June and September** are the "sweet spot" for Halden Bay and the best months to avoid crowds at Pellew Sands (guide_halden_bay.md, guide_pellew_sands.md).
+* **Any time** works for Marchwood, as it functions year-round (guide_marchwood.md).
+```
 
 ## Verdicts
 
@@ -262,13 +324,23 @@ I pitched my plan for the chunking function to the AI. I wanted to use sentence 
 
      Milestone 2. -->
 
-| #   | Criterion | Verdict | How I decided |
-| --- | --------- | ------- | ------------- |
-| 1   |           |         |               |
-| 2   |           |         |               |
-| 3   |           |         |               |
-| 4   |           |         |               |
-| 5   |           |         |               |
+     Gate stops out-of-corpus questions   | 4 of 5 | 5/5  | 5/5  | 5/5  | MET    |
+
+| 4. Chunks end at a sentence boundary | 5 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| 5. For multiple towns, retrieved chunks | 4 of 5 | 0/5 | 0/5 | 0/5 | MISSED |
+include at least one chunk from every
+named town's own guide document
+
+| #   | Criterion                           | Verdict | How I decided                                                                              |
+| --- | ----------------------------------- | ------- | ------------------------------------------------------------------------------------------ |
+| 1   | Retrieved chunk contains the answer | MISSED  | model was not consistent across the three runs. Returned 4,3,4 against and target of 4     |
+| 2   | Every answer names a source         | MET     | For all runs, we identified a source for each answer per question                          |
+| 3   | stops out-of-corpus questions       | MET     | All out of scope questions were identified and returned 'I don't have enough information'. |
+| 4   | Chunks end at a sentence boundary   | MET     | All the returned chunks ended at a sentence coundary without any mid sentence cutoffs.     |
+| 5   | retrieved chunks                    |
+
+include at least one chunk from every
+named town's own guide document | MISSED | Retrieved chunks prioritized based on topics over the cities in context. For example, if the question was about transport, the model picked chunks from transport related documents and didn't diversify acroass different cities. |
 
 ## Diagnoses
 
