@@ -35,6 +35,12 @@ CHUNK_OVERLAP = 120     # characters shared between neighbouring chunks
 
 TOP_K = 5               # how many chunks to pull back per question
 
+# Unit 2 improvement: add a BM25 keyword pass alongside the semantic one and
+# fuse the two rankings (store.py::_hybrid_search). Validated against
+# results/run_2026-09-30_1612_after.md — fixed criterion 1 (3,4,3 -> 4,4,4)
+# and criterion 5 (multi-town crowding) without affecting criteria 2-4.
+HYBRID_SEARCH = True
+
 # The relevance gate. If the best chunk is further away than this, the system
 # refuses to answer instead of handing the model thin material.
 #

@@ -18,6 +18,7 @@ rest of the project if they were wrong:
 """
 
 import os
+import re
 import shutil
 from dataclasses import dataclass
 
@@ -132,6 +133,106 @@ def embed(texts: list[str]) -> list[list[float]]:
     return vectors.tolist() if hasattr(vectors, "tolist") else vectors
 
 
+_TOKEN = re.compile(r"[a-z0-9]+")
+
+
+def _tokenize(text: str) -> list[str]:
+    return _TOKEN.findall(text.lower())
+
+
+_bm25_cache: dict[str, tuple] = {}
+
+
+def _bm25_for(name: str, collection):
+    """
+    Build (and cache) a BM25 index over every chunk in a collection.
+
+    Exact-keyword scoring, as a second signal alongside cosine distance. This
+    corpus's towns are proper nouns — "Marchwood" either is or isn't in a
+    chunk's text — and that's exactly the kind of exact match embeddings can
+    bury under a chunk that's merely topically similar. BM25 rewards the
+    literal match no matter how it scores on meaning.
+    """
+    cached = _bm25_cache.get(name)
+    if cached is not None and cached[0] == collection.count():
+        return cached[1:]
+
+    from rank_bm25 import BM25Okapi
+
+    raw = collection.get()
+    ids = raw["ids"]
+    texts = raw["documents"]
+    metadatas = raw["metadatas"]
+    bm25 = BM25Okapi([_tokenize(t) for t in texts])
+
+    _bm25_cache[name] = (collection.count(), bm25, ids, texts, metadatas)
+    return bm25, ids, texts, metadatas
+
+
+def _hybrid_search(question: str, top_k: int, collection) -> list[Result]:
+    """
+    Combine semantic (cosine) and keyword (BM25) rankings with Reciprocal
+    Rank Fusion, instead of ranking on meaning alone.
+
+    Why: a question naming several towns by name can have a generic
+    thematic document (about walking, or transport, region-wide) rank
+    closer in *meaning* than any one town's own guide, because the generic
+    doc's entire content is that topic while the town's guide only mentions
+    it in passing. With a fixed top_k, that crowds out the specific towns
+    the question is actually asking about — raising top_k just pulls in
+    more generic chunks, not the missing towns (measured directly: on this
+    corpus, Marchwood's own relevant chunk doesn't rank above position 15).
+    BM25 fixes this because it scores the literal token "Marchwood",
+    independent of how the rest of the chunk reads on topic.
+
+    RRF (rank, not raw score) is used because cosine distance and BM25
+    score live on unrelated, incomparable scales — fusing by rank avoids
+    having to invent a weighting between them.
+    """
+    n = collection.count()
+
+    semantic = collection.query(query_embeddings=embed([question]), n_results=n)
+    sem_ids = semantic["ids"][0]
+    sem_docs = semantic["documents"][0]
+    sem_metas = semantic["metadatas"][0]
+    sem_distances = semantic["distances"][0]
+    semantic_rank = {doc_id: rank for rank, doc_id in enumerate(sem_ids, start=1)}
+    distance_by_id = dict(zip(sem_ids, sem_distances))
+
+    bm25, bm25_ids, _, _ = _bm25_for(collection.name, collection)
+    scores = bm25.get_scores(_tokenize(question))
+    bm25_order = sorted(range(len(bm25_ids)), key=lambda i: scores[i], reverse=True)
+    bm25_rank = {bm25_ids[i]: rank for rank, i in enumerate(bm25_order, start=1)}
+
+    k = 60  # standard RRF constant — de-emphasizes rank differences far down the list
+    fused = sorted(
+        sem_ids,
+        key=lambda doc_id: 1 / (k + semantic_rank[doc_id]) + 1 / (k + bm25_rank.get(doc_id, len(sem_ids))),
+        reverse=True,
+    )
+
+    doc_by_id = dict(zip(sem_ids, sem_docs))
+    meta_by_id = dict(zip(sem_ids, sem_metas))
+
+    results: list[Result] = []
+    for doc_id in fused[:top_k]:
+        meta = meta_by_id[doc_id]
+        results.append(
+            Result(
+                text=doc_by_id[doc_id],
+                source=str(meta.get("source", "unknown")),
+                label=f"{meta.get('source', 'unknown')}#{meta.get('index', 0)}",
+                # The ORIGINAL cosine distance, not a fused score — gate.py's
+                # threshold is calibrated against cosine distance, and that
+                # calibration has to keep meaning whatever ranking chose this
+                # chunk.
+                distance=float(distance_by_id[doc_id]),
+                produced_by=str(meta.get("produced_by", "unknown")),
+            )
+        )
+    return results
+
+
 def _client():
     return chromadb.PersistentClient(
         path=str(config.CHROMA_DIR),
@@ -188,13 +289,19 @@ def search(
     top_k: int | None = None,
     corpus: str | None = None,
     variant: str = "default",
+    hybrid: bool | None = None,
 ) -> list[Result]:
     """
     Retrieve the chunks closest in meaning to a question.
 
     Returns them nearest-first, each with its distance.
+
+    `hybrid=True` adds a BM25 keyword pass alongside the semantic one and
+    fuses the two rankings (see `_hybrid_search`) — see config.HYBRID_SEARCH
+    for why this exists. Defaults to that config value.
     """
     top_k = top_k or config.TOP_K
+    hybrid = config.HYBRID_SEARCH if hybrid is None else hybrid
     name = config.collection_name(corpus, variant)
 
     try:
@@ -209,6 +316,9 @@ def search(
             f"Index '{name}' exists but is empty. `python app.py index` must have "
             f"failed partway through. Run it again."
         )
+
+    if hybrid:
+        return _hybrid_search(question, top_k, collection)
 
     raw = collection.query(
         query_embeddings=embed([question]),

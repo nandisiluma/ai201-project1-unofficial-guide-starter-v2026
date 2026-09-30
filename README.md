@@ -355,7 +355,7 @@ named town's own guide document | MISSED | Retrieved chunks prioritized based on
 
      Milestone 3. -->
 
-Both misses trace back to the retrieval stage but two different
+Both misses trace back to the retrieval stagebut two different
 mechanisms, plus a secondary quirk worth flagging separately.
 
 **Pattern 1: multi-town crowding.** This is the entire reason criterion 5
@@ -418,12 +418,12 @@ runs.
      `python run_eval.py --label after` -->
 
 | Criterion                              | Target | Run 1 | Run 2 | Run 3 | Verdict |
-| -------------------------------------- | ------ | ----- | ----- | ----- | ------- |
-| 1. Retrieved chunk contains the answer | 4 of 5 |       |       |       |         |
-| 2. Every answer names a source         | 5 of 5 |       |       |       |         |
-| 3. Gate stops out-of-corpus questions  | 4 of 5 |       |       |       |         |
-| 4.                                     |        |       |       |       |         |
-| 5.                                     |        |       |       |       |         |
+| -------------------------------------- | ------ | ----- | ----- | ----- | ------- | --- | --- | --- | --- | --- | --- |
+| 1. Retrieved chunk contains the answer | 4 of 5 | 4/5   | 4/5   | 4/5   | MET     |
+| 2. Every answer names a source         | 5 of 5 | 5/5   | 5/5   | 5/5   | MET     |
+| 3. Gate stops out-of-corpus questions  | 4 of 5 | 5/5   | 5/5   | 5/5   | MET     |
+| 4. Chunks end at a sentence boundary   | 5 of 5 | 5/5   | 5/5   | 5/5   | MET     |
+| 5. Multi-town coverage                 | 4 of 5 | 1/5   | 1/5   | 1/5   | MISSED  |     |     |     |     |     |     |
 
 **Did it help?**
 
@@ -433,6 +433,8 @@ runs.
      tell.
 
      Milestone 4. -->
+
+Yes, using keyboard seach I was able to imporve the retrieval numbers for criterion 1.
 
 ## What's Still Broken
 
