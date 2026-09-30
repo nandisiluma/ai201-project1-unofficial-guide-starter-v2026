@@ -324,13 +324,6 @@ Based on the provided documents, there is no single best month for the entire re
 
      Milestone 2. -->
 
-     Gate stops out-of-corpus questions   | 4 of 5 | 5/5  | 5/5  | 5/5  | MET    |
-
-| 4. Chunks end at a sentence boundary | 5 of 5 | 5/5 | 5/5 | 5/5 | MET |
-| 5. For multiple towns, retrieved chunks | 4 of 5 | 0/5 | 0/5 | 0/5 | MISSED |
-include at least one chunk from every
-named town's own guide document
-
 | #   | Criterion                           | Verdict | How I decided                                                                              |
 | --- | ----------------------------------- | ------- | ------------------------------------------------------------------------------------------ |
 | 1   | Retrieved chunk contains the answer | MISSED  | model was not consistent across the three runs. Returned 4,3,4 against and target of 4     |
@@ -361,6 +354,54 @@ named town's own guide document | MISSED | Retrieved chunks prioritized based on
      low, and which one you'd tighten and to what.
 
      Milestone 3. -->
+
+Both misses trace back to the retrieval stage but two different
+mechanisms, plus a secondary quirk worth flagging separately.
+
+**Pattern 1: multi-town crowding.** This is the entire reason criterion 5
+missed (0 of 5, every run), and it's also half of why criterion 1 missed —
+it's the same mechanism driving the walk-comparison question's failure. With
+`top_k=5`, a generic thematic document (`guide_walking.md`,
+`guide_regional_transport.md`) embeds closer to "which city is fastest to
+walk end to end" than most individual towns' own guides do, because the
+generic doc's whole content is about walking across the region, while each
+town's guide only mentions walking in passing inside a larger "Getting
+around" section. Across all three runs, retrieval for that question returned
+the exact same three sources every time — `guide_regional_transport.md`,
+`guide_thornby_wells.md`, `guide_walking.md` — never `guide_marchwood.md` or
+`guide_brightwater.md`. Three towns needed coverage, only 5 slots existed,
+and the generic docs plus Thornby Wells took all of them. This is a
+retrieval-stage problem, not a chunking one — Marchwood's walkability
+sentence exists cleanly in its own chunk (confirmed when we sampled chunks in
+Milestone 3); it just never gets retrieved for this question.
+
+**Pattern 2: topic/phrasing mismatch.** The bus-tickets question fails all
+three runs for a different reason. Its casual phrasing ("what should
+visitors be careful about... first time") embeds closer to generic
+caution/practical-notes chunks (`guide_elder_ness.md`,
+`guide_accessibility.md`, `guide_halden_bay.md`) than to the chunk that
+actually answers it — `guide_regional_transport.md`'s "## Buses" section,
+which states plainly that the three operators don't accept each other's
+tickets. That chunk exists and is well-formed (it's Sample Chunk 5 from
+Milestone 3), so this isn't a chunking failure either; indirect phrasing just
+doesn't land near specific operational content in embedding space the way a
+more literal phrasing would.
+
+**The pattern across both:** every miss happens before the model ever sees
+the question. Chunking, embedding, and generation are all doing what they're
+supposed to — the failure is entirely in what top-k retrieval selects, which
+has no mechanism to guarantee coverage across multiple relevant documents
+(pattern 1) or to bridge paraphrased intent to specific content (pattern 2).
+
+One more thing worth noting, since it looks like a contradiction otherwise:
+the walk-comparison question flipped fail → pass → fail across the three
+runs even though retrieval returned identical sources every time. That
+"pass" isn't evidence retrieval sometimes worked — it's the model phrasing
+its own refusal slightly differently that run ("do not provide enough
+information to determine..." instead of "I do not have enough information"),
+which happened to dodge `scorer.py`'s hedge-phrase list. The underlying
+retrieval gap (no Marchwood or Brightwater chunks) was present in all three
+runs.
 
 ## The Improvement
 
