@@ -214,6 +214,14 @@ I asked AI to review the questions I came up with for testability. It helped me 
 
 I pitched my plan for the chunking function to the AI. I wanted to use sentence level splitting to avoid mid sentence cutoffs, and AI pointed out the gaps in that although this solves the mid-sentence cutoff problem, it will not resolve paragraph blending which is another problem I needed to address. As a result the new logic for the chunking function runs mainly on the paragraph level split, and also uses the sentence level split as a fallback option.
 
+**3.**
+
+I asked Claude to build `scorer.py` from the `judge(question, expects, answer, results) -> bool` spec in `run_eval.py`. It came back with a substring check on `expects` plus a hedge-phrase list so a disguised refusal wouldn't score as a pass — then, when I asked it to validate that against my actual run log, it caught that its own hedge list produces a false pass (a refusal phrased as "do not provide enough information" slips past it) and a false fail on the best-month question's legitimate closing caveat. I kept the scorer as-is since erring toward "fail" seemed safer, but now know to read the real output behind any close verdict.
+
+**4.**
+
+When criterion 5 kept missing, I described the pattern — retrieval always returning the same sources for the walk-comparison question, never Marchwood's or Brightwater's own guides — and asked whether raising `top_k` or re-chunking would fix it. It had me test raising `top_k` first (up to 20), which showed Marchwood's chunk doesn't rank above position 15 — more slots alone just added more irrelevant towns, it didn't help. That's what pointed to hybrid search (BM25 + semantic, fused by rank) instead. I had it implement that in `store.py`, then verified myself that the after-run log actually shows `guide_marchwood.md` and `guide_brightwater.md` being retrieved, not just a plausible explanation for why they should be.
+
 <!-- ── Stretch features ─────────────────────────────────────────────────────
      Doing one? Say so here BEFORE you start. A feature this README never
      claims earns nothing.
@@ -446,9 +454,61 @@ Yes, using keyboard seach I was able to imporve the retrieval numbers for criter
 
      Milestone 5. -->
 
+1. Criterion 1 is technically MET after the fix (4 of 5, held across all
+   three "after" runs) — but one question, the bus-tickets one, has failed
+   in _every_ run, before and after. The diagnosed cause:
+   `guide_regional_transport.md`'s "## Buses" section never repeats the word
+   "bus" in its body, only in the plural heading, so a casually-phrased
+   question ("what should visitors be careful about... first time?") has no
+   lexical or semantic bridge to it — BM25 has nothing to match, and cosine
+   similarity favors generic caution chunks instead. Next thing I'd try:
+   query rewriting (expand "bus" with synonyms like "ticket"/"fare"/
+   "operator" before retrieval) or rewriting the chunk itself in
+   visitor-facing language. I stopped here because this single failure
+   doesn't break the 4-of-5 target, and hybrid search was the higher-value
+   fix since it addressed two criteria at once rather than one question in
+   one criterion.
+
+2. Criterion 5 is MET on paper, but I don't fully trust the verdict. The
+   criterion is phrased as "4 of 5," which assumes five comparable trials —
+   but there's only ever been one multi-town question in my test set, so
+   one pass isn't the same evidence as 4 of 5 independent ones. I haven't
+   decided yet whether to give criterion 5 its own dedicated multi-town
+   question set (the way criterion 3 has its own `OUT_OF_SCOPE` list,
+   separate from the core five) or rewrite it as a plain fact instead of a
+   rate. I ran out of time to settle which, so the honest state is: the fix
+   is proven on the one example I have, not on a population large enough to
+   call a rate.
+
+3. `scorer.py`'s hedge-phrase check is a known source of noise in both
+   directions — it gave a false pass in the Before log (a refusal phrased
+   as "do not provide enough information" dodged the hedge list) and it
+   would give a false fail on a genuinely good answer that hedges only as a
+   footnote (the best-month question's "the documents do not specify a
+   single best month for the entire region" line). I left it as-is because
+   erring strict felt safer than erring lenient, but it means any Run-column
+   verdict needs a glance at the real output before it's trusted, not just
+   the pass/fail count.
+
 ## What I'd Do Differently
 
 <!-- Knowing what you know now — which of your five criteria would you write
      differently, and why?
 
      Milestone 5. -->
+
+Criterion 5, clearly. I'd write it from the start as either a single
+observable fact ("the multi-town test question gets full town coverage") or
+give it its own five-question population, the same way criterion 3 got its
+own `OUT_OF_SCOPE` list from day one. Writing it as "at least 4 of 5" when
+only one question in my actual test set could ever trigger it was a mismatch
+I didn't catch until the after-results table made the denominator
+meaningless.
+
+I'd also define criterion 1's "contains the answer" more carefully. Building
+`scorer.py` this unit showed the substring-on-`expects` approach isn't
+obviously wrong until you watch it disagree with your own reading twice —
+once too lenient, once too strict, on the same kind of hedge language. Next
+time I'd pick `expects` phrases that can't appear for unrelated reasons (not
+a place name that shows up regardless of whether the question got answered),
+and decide up front whether a hedged-but-partially-right answer counts.
